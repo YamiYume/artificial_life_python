@@ -1,8 +1,7 @@
 
-class EventManager():
+class SimulationEventManager():
 
     def __init__(self):
-
         self.suscribers = {}
 
     def suscribe(self, event_type: str, func: callable):
