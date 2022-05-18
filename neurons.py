@@ -1,76 +1,114 @@
-from abc import abstractclassmethod, ABC
-from numpy import sum, tanh
 from random import random
 
+from numpy import sum as npsum
+from numpy import tanh
 
-class InputNeuron(ABC):
+from organism import Organism
+from ecosystem import Ecosystem
+
+
+class InputNeuron:
 
     __slots__ = ('child_links', 'calculation', 'owner')
 
-    def __init__(self, owner, child_links: dict) -> None:
+    def __init__(self, owner: Organism) -> None:
         self.owner = owner
-        self.childs_links = child_links
+        self.child_links = {}
         self.calculation = None
 
-    @abstractclassmethod
-    def input_calculation(self, **kwargs) -> None:
+    def input_calculation():
         pass
 
     def output_sending(self) -> None:
         for child, weight in self.child_links:
             child.input_calculation(self.calculation * weight)
 
+    def append_child(self, child, weight: float):
+        self.child_links[child, weight]
 
-class OutputNeuron(ABC):
+    def wiring_check(self):
+        removal = []
+        wired = False
 
-    __slots__ = ('calculation', 'owner')
+        for child in self.child_links:
+            child_wiring = child.wiring_check()
 
-    def __init__(self, owner) -> None:
-        self.calculation = None
+            if child_wiring is False:
+                removal.append(child_wiring)
+
+            wired = wired or child_wiring
+
+        for child in removal:
+            del self.child_links[child]
+
+        return wired
+
+    def get_subscription(self, enviroment: Ecosystem):
+        enviroment.subscribe(self.__class__.__name__,
+                             self.input_calculation)
+
+
+class OutputNeuron:
+
+    __slots__ = ('calculation', 'owner', 'memory', 'memory_size')
+
+    def __init__(self, owner: Organism) -> None:
         self.owner = owner
 
-    def input_calculation(self, **kwargs) -> None:
-        self.calculation = tanh(sum(kwargs['data']))
-        self.output_action()
+        self.memory = []
+        self.memory_size = 0
+        self.calculation = None
 
-    @abstractclassmethod
-    def output_action(self) -> None:
+    def input_calculation(self, value) -> None:
+        self.memory.append(value)
+
+        if len(self.memory) == self.memory_size:
+            self.calculation = tanh(npsum(self.memory))
+            self.output_sending()
+            self.memory = []
+
+    def output_action():
         pass
 
+    def increase_memory(self):
+        self.memory_size += 1
 
-class MemoryHelperNeuron():
-
-    __slots__ = ('child_links', 'memory_size')
-
-    def __init__(self, memory_size, child_links) -> None:
-        self.memory_size = memory_size
-        self.child_links = child_links
-        self.memory = tuple()
-
-    def input_calculation(self, **kwargs):
-        self.memory = self.memory + (kwargs['value'],)
-        if len(self.memory) == self.memory_size:
-            self.output_sending()
-
-    def output_sending(self):
-        for child in self.child_links:
-            child.input_calculation(data=self.memory)
-        self.memory = tuple()
+    @staticmethod
+    def wiring_check(self):
+        if self.memory_size > 0:
+            return True
+        return False
 
 
 class MiddleNeuron(InputNeuron):
 
-    __slots__ = ('neuron_memory')
+    __slots__ = ('memory', 'memory_size')
 
-    def input_calculation(self, **kwargs) -> None:
-        self.calculation = tanh(sum(kwargs['data']))
-        self.output_sending()
+    def __init__(self, owner: Organism) -> None:
+        self.memory = []
+        self.memory_size = 0
+
+        super().__init__(owner)
+
+    def input_calculation(self, value) -> None:
+        self.memory.append(value)
+
+        if len(self.memory) == self.memory_size:
+            self.calculation = tanh(npsum(self.memory))
+            self.output_sending()
+            self.memory = []
+
+    def increase_memory(self):
+        self.memory_size += 1
+
+    def get_subscription(self, enviroment: Ecosystem):
+        pass
 
 
 class InputLifetime(InputNeuron):
 
-    def input_calculation(self, **kwargs) -> None:
-        self.calculation = kwargs['bit_lived']
+    def input_calculation(self, bit_lived) -> None:
+        self.calculation = bit_lived
         self.output_sending()
 
 

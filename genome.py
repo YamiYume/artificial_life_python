@@ -1,66 +1,44 @@
-from random import random
-from typing import Tuple
+from random import getrandbits, random
 
 
 class Genome:
+    '''
+     Class in charge of generate and manipulate a hex string
+     genome that codifies the brain structure of a Organism
+    '''
 
-    __slots__ = ('genome', 'neuronal_sizes', 'size')
+    __slots__ = ('genome', 'genome_size')
 
-    neuronal_sizes = None
-    size = None
+    def __init__(self, genome_size: int, inheritance: str = None):
+        '''
+        __init__ Create a instance of the genome given how much
+        genes it have or copy it if one is provide.
 
-    def __init__(self):
-        self.genome = tuple()
-
-    def generate_parent_genes(self) -> Tuple[int, int]:
-
-        parent_type = int(random() * 2)
-        parent_id = int(random() * self.neuronal_sizes[parent_type])
-
-        return (parent_type, parent_id)
-
-    def generate_child_genes(self) -> Tuple[int, int]:
-
-        child_type = int(random() * 2)
-        child_id = int(random() * self.neuronal_sizes[child_type + 1])
-
-        return (child_type, child_id)
-
-    def generate_weight_gene() -> Tuple[int]:
-
-        weight = int((random() * 10 + 1) * -1 ** int(random() * 2))
-
-        return (weight,)
-
-    def generate_genome(self, inherited_genome) -> None:
-
-        if inherited_genome is None:
-            for _ in range(self.size):
-                parent_genes = self.generate_parent_genes
-                child_genes = self.generate_child_genes
-                weight_gene = self.generate_weight_gene
-                self.genome = self.genome + (parent_genes
-                                             + child_genes
-                                             + weight_gene,)
+        Args:
+            genome_size (int): Number of gene in the genome.
+            inheritance (str, optional): Genome to inherit.
+                                         Defaults to None.
+        '''
+        if inheritance is None:
+            genome = ''
+            for _ in range(genome_size):
+                gene = format(getrandbits(32), '0>8x')
+                genome += gene
+            self.genome = gene
         else:
-            self.Genome = inherited_genome
+            self.genome = inheritance
+            self.genome_size = genome_size
 
-    def mutate(self, probability: float) -> None:
+    def mutate(self, probability: float):
+        '''
+        mutate Mutate a genome with a given probability
 
+        Args:
+            probability (float): How likely is to mutate
+        '''
         if random() < probability:
-            portion = int(random() * 3)
-            if portion == 0:
-                self.genome = self.generate_parent_genes() + self.genome[2:]
-            elif portion == 1:
-                self.genome = (self.genome[:2] + self.generate_child_genes()
-                               + self.genome[4:])
-            else:
-                self.genome = self.genome[:4] + self.generate_weight_gene()
-
-    @classmethod
-    def set_neuronal_sizes(cls, neuronal_sizes):
-        cls.neuronal_sizes = neuronal_sizes
-
-    @classmethod
-    def set_size(cls, size: int):
-        cls.size = size
+            new_allele = format(int(random() * 16), 'x')
+            position = int(random() * 8 * self.genome_size)
+            genome = [*self.genome]
+            genome[position] = new_allele
+            self.genome = ''.join(genome)
