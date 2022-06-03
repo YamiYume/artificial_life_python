@@ -20,21 +20,24 @@ class InputNeuron:
         pass
 
     def output_sending(self) -> None:
-        for child, weight in self.child_links:
+        for child, weight in self.child_links.items():
             child.input_calculation(self.calculation * weight)
 
     def append_child(self, child, weight: float):
-        self.child_links[child, weight]
+        self.child_links[child] = weight
 
     def wiring_check(self):
         removal = []
         wired = False
 
         for child in self.child_links:
+            if child is self:
+                continue
+
             child_wiring = child.wiring_check()
 
             if child_wiring is False:
-                removal.append(child_wiring)
+                removal.append(child)
 
             wired = wired or child_wiring
 
@@ -64,7 +67,7 @@ class OutputNeuron:
 
         if len(self.memory) == self.memory_size:
             self.calculation = tanh(npsum(self.memory))
-            self.output_sending()
+            self.output_action()
             self.memory = []
 
     def output_action():
@@ -73,7 +76,6 @@ class OutputNeuron:
     def increase_memory(self):
         self.memory_size += 1
 
-    @staticmethod
     def wiring_check(self):
         if self.memory_size > 0:
             return True
@@ -105,7 +107,7 @@ class MiddleNeuron(InputNeuron):
         pass
 
 
-class InputLifetime(InputNeuron):
+class InputLifeTime(InputNeuron):
 
     def input_calculation(self, bit_lived) -> None:
         self.calculation = bit_lived
@@ -114,7 +116,12 @@ class InputLifetime(InputNeuron):
 
 class OutputMovementX(OutputNeuron):
 
-    def ouput_actions(self):
+    def output_action(self):
         if random() < abs(self.calculation):
-            self.owner.coordinate[0] += int(self.calculation
-                                            / abs(self.calculation))
+            movement_proposition = [self.owner.coordinates[0] +
+                                    int(self.calculation /
+                                        abs(self.calculation)),
+                                    self.owner.coordinates[1]]
+            if self.owner.ecosystem.position_manager. \
+               verify_move(movement_proposition):
+                self.owner.coordinates = movement_proposition

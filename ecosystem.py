@@ -4,11 +4,14 @@ from numpy.random import choice
 
 from organism import Organism
 
+from position_manager import PositionManager
+
 
 class Ecosystem:
 
-    __slots__ = ('lifespan', 'population_size', 'ecosystem_size',
-                 'mutation_probability', 'population', 'subscribers',)
+    __slots__ = ('lifespan', 'lifetime', 'population_size', 'ecosystem_size',
+                 'mutation_probability', 'population', 'subscribers',
+                 'position_manager')
 
     def __init__(self, lifespan: int, population_size: int,
                  ecosystem_size: Tuple[int, int],
@@ -21,13 +24,15 @@ class Ecosystem:
         self.ecosystem_size = ecosystem_size
         self.mutation_probability = mutation_probability
 
+        self.lifetime = 0
+
     def populate(self, survivors: tuple = None):
         population = []
 
         if survivors is None:
 
             for _ in range(self.population_size):
-                new_organism = Organism(self.ecosystem)
+                new_organism = Organism(self)
                 population.append(new_organism)
 
         else:
@@ -45,7 +50,8 @@ class Ecosystem:
                 new_organism.adn.mutate(self.mutation_probability)
                 population.append(new_organism)
 
-            self.population = tuple(population)
+        self.population = tuple(population)
+        self.position_manager = PositionManager(population)
 
     def subscribe(self, event_type: str, func: callable):
 
@@ -54,9 +60,7 @@ class Ecosystem:
         except KeyError:
             self.subscribers[event_type] = [func]
 
-    def broadcast_event(self, event_type: str, **kwargs):
+    def broadcast_event(self, event_type: str, *args):
 
-        if event_type not in self.subscribers:
-            return
         for func in self.subscribers[event_type]:
-            func(**kwargs)
+            func(*args)
